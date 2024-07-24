@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:fitness/common/color_extension.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/notification_screen.dart';
@@ -6,9 +7,67 @@ import 'package:flutter/material.dart';
 import 'progress_chart.dart';
 import 'summary_card.dart';
 import 'recommendation_card.dart';
+import 'package:pedometer/pedometer.dart';
 import '../../common_widgets/discover_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // final HealthConnectService _healthConnectService = HealthConnectService();
+  // String _steps = '0';
+  // String _calories = '0';
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _fetchHealthData();
+  // }
+
+  // Future<void> _fetchHealthData() async {
+  //   DateTime startTime = DateTime.now().subtract(Duration(days: 1));
+  //   DateTime endTime = DateTime.now();
+  //   var data = await _healthConnectService.getRecords(startTime, endTime);
+
+  //   setState(() {
+  //     _steps = data[HealthConnectDataType.Steps.name]?.toString() ?? '0';
+  //     _calories = data[HealthConnectDataType.TotalCaloriesBurned.name]?.toString() ?? '0';
+  //   });
+  // }
+
+  String _stepCountValue = '0';
+  double _caloriesBurned = 0.0;
+  Stream<StepCount>? _stepCountStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stepCountStream = Pedometer.stepCountStream;
+    _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
+  }
+
+  void _onStepCount(StepCount event) {
+    setState(() {
+      _stepCountValue = event.steps.toString();
+      _caloriesBurned = calculateCalories(event.steps);
+    });
+  }
+
+  void _onStepCountError(error) {
+    print('Error: $error');
+    setState(() {
+      _stepCountValue = 'Step Count not available';
+    });
+  }
+
+  double calculateCalories(int steps) {
+    // A simple estimation: 0.04 calories per step
+    return steps * 0.04;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,11 +118,11 @@ class HomeScreen extends StatelessWidget {
               children: [
                 SummaryCard(
                     title: 'Steps',
-                    value: '7,540',
+                    value: _stepCountValue,
                     icon: Icons.directions_walk),
                 SummaryCard(
                     title: 'Calories',
-                    value: '1,230',
+                    value: _caloriesBurned.toStringAsFixed(2),
                     icon: Icons.local_fire_department),
               ],
             ),
