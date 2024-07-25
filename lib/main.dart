@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         fontFamily: "Poppins",
         primaryColor: TextColor.primaryColor1,
       ),
-      home: MainScreen(),
+      home: StartedView(),
       routes: {
         '/home': (context) => HomeScreen(),
         '/profile': (context) => ProfileScreen(),

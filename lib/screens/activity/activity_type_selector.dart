@@ -1,4 +1,3 @@
-import 'package:fitness/common/color_extension.dart';
 import 'package:flutter/material.dart';
 
 class ActivityTypeSelector extends StatelessWidget {
@@ -16,12 +15,12 @@ class ActivityTypeSelector extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
-          color: TextColor.primaryColor1.withOpacity(0.5),
+          color: Colors.blue.withOpacity(0.5),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           currentActivity,
-          style: TextStyle(color: const Color.fromARGB(255, 38, 9, 9), fontSize: 20,),
+          style: TextStyle(color: Colors.white, fontSize: 20),
         ),
       ),
     );

@@ -1,20 +1,30 @@
-import 'package:fitness/common_widgets/pause_button.dart';
-import 'package:fitness/common_widgets/stop_button.dart';
 import 'package:flutter/material.dart';
+import '../../common_widgets/pause_button.dart';
+import '../../common_widgets/resume_button.dart';
+import '../../common_widgets/stop_button.dart';
 
 class ActivityTrackingScreen extends StatelessWidget {
+  final String activityName;
   final String time;
   final String speed;
   final String distance;
+  final String calories;
+  final String steps;
+  final bool isPaused;
   final VoidCallback onStop;
   final VoidCallback onPause;
 
-  ActivityTrackingScreen(
-      {required this.time,
-      required this.speed,
-      required this.distance,
-      required this.onStop,
-      required this.onPause});
+  ActivityTrackingScreen({
+    required this.activityName,
+    required this.time,
+    required this.speed,
+    required this.distance,
+    required this.calories,
+    required this.steps,
+    required this.isPaused,
+    required this.onStop,
+    required this.onPause,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +48,7 @@ class ActivityTrackingScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Tracking',
+            activityName,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 8),
@@ -63,6 +73,18 @@ class ActivityTrackingScreen extends StatelessWidget {
                   Text(distance),
                 ],
               ),
+              Column(
+                children: [
+                  Text('Calories'),
+                  Text(calories),
+                ],
+              ),
+              Column(
+                children: [
+                  Text('Steps'),
+                  Text(steps),
+                ],
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -70,7 +92,9 @@ class ActivityTrackingScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               StopButton(onPressed: onStop),
-              PauseButton(onPressed: onPause),
+              isPaused
+                  ? ResumeButton(onPressed: onPause)
+                  : PauseButton(onPressed: onPause),
             ],
           ),
         ],
