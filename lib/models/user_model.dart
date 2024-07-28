@@ -1,8 +1,8 @@
 class UserModel {
   final String uid;
-  final String email;
-  final String firstName;
-  final String lastName;
+  final String? email;
+  final String? firstName;
+  final String? lastName;
   String? gender;
   String? dateOfBirth;
   String? weight;

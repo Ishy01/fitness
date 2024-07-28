@@ -1,10 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/common/color_extension.dart';
 import 'package:fitness/common_widgets/round_textfield.dart';
 import 'package:fitness/common_widgets/rounded_button.dart';
-import 'package:fitness/screens/home/home_screen.dart';
-import 'package:fitness/screens/login/complete_profile_view.dart';
+import 'package:fitness/screens/login/signup_view.dart';
 import 'package:fitness/screens/main_tab/main_screen.dart';
+import 'package:fitness/services/authentication.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -16,6 +18,66 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   bool isCheck = false;
   bool _obscurePassword = true;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
+  void _login() async {
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      if (userCredential.user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle login error
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message ?? "Login failed")));
+    }
+  }
+
+  void _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        if (userCredential.user != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MainScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle Google sign-in error
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Google sign-in failed")));
+    }
+  }
+
+  void _resetPassword() async {
+    if (_emailController.text.isNotEmpty) {
+      await _authService.resetPassword(_emailController.text);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Password reset email sent")));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please enter your email")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.of(context).size;
@@ -46,7 +108,8 @@ class _LoginViewState extends State<LoginView> {
                 SizedBox(
                   height: media.width * 0.04,
                 ),
-                const RoundTextField(
+                RoundTextField(
+                  controller: _emailController,
                   hitText: "Email",
                   icon: "assets/images/email.png",
                   keyboardType: TextInputType.emailAddress,
@@ -55,6 +118,7 @@ class _LoginViewState extends State<LoginView> {
                   height: media.width * 0.04,
                 ),
                 RoundTextField(
+                  controller: _passwordController,
                   hitText: "Password",
                   icon: "assets/images/lock.png",
                   obscureText: _obscurePassword,
@@ -84,30 +148,91 @@ class _LoginViewState extends State<LoginView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "Forgot your password?",
-                      style: TextStyle(
-                          color: TextColor.gray,
-                          fontSize: 14,
-                          decoration: TextDecoration.underline),
+                    GestureDetector(
+                      onTap: _resetPassword,
+                      child: Text(
+                        "Forgot your password?",
+                        style: TextStyle(
+                            color: TextColor.gray,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline),
+                      ),
                     ),
                   ],
                 ),
                 const Spacer(),
                 RoundedButton(
-                    title: "Login",
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainScreen()));
-                    }),
+                  title: "Login",
+                  onPressed: _login,
+                ),
                 SizedBox(
                   height: media.width * 0.04,
                 ),
+                Row(
+                  children: [
+                    Expanded(
+                        child: Container(
+                      height: 1,
+                      color: TextColor.gray.withOpacity(0.5),
+                    )),
+                    Text(
+                      "  Or  ",
+                      style: TextStyle(color: TextColor.black, fontSize: 12),
+                    ),
+                    Expanded(
+                        child: Container(
+                      height: 1,
+                      color: TextColor.gray.withOpacity(0.5),
+                    )),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: _signInWithGoogle,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: TextColor.white,
+                          border: Border.all(
+                            width: 1,
+                            color: TextColor.gray.withOpacity(0.4),
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "assets/images/google.png",
+                              width: 25,
+                              height: 25,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "Continue with Google",
+                              style: TextStyle(
+                                color: TextColor.black,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              SignUpView()), // Ensure you have a sign up view
+                    );
                   },
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -120,7 +245,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                       ),
                       Text(
-                        "Register",
+                        "Sign Up",
                         style: TextStyle(
                             color: TextColor.black,
                             fontSize: 14,

@@ -1,3 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitness/models/activity_session.dart';
+import 'package:fitness/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -93,31 +96,56 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   void _showSaveOrDiscardDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Activity Finished'),
-          content: Text('Do you want to save or discard this activity?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Handle discard action
-                Navigator.of(context).pop();
-              },
-              child: Text('Discard'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Handle save action
-                Navigator.of(context).pop();
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Activity Finished'),
+        content: Text('Do you want to save or discard this activity?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Handle discard action
+              Navigator.of(context).pop();
+            },
+            child: Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Handle save action
+              await _saveActivity();
+              Navigator.of(context).pop();
+            },
+            child: Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+  Future<void> _saveActivity() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final session = ActivitySession(
+        userId: user.uid,
+        activityType: currentActivity,
+        startTime: _timerTracker!.startTime!,
+        endTime: DateTime.now(),
+        distance: _locationTracker!.totalDistance,
+        steps: _stepTracker!.steps,
+        calories: _caloriesTracker!.calculateCaloriesBurned(
+          _locationTracker!.totalDistance,
+          userWeight,
+          _locationTracker!.speed,
+        ),
+        speed: _locationTracker!.speed,
+      );
+
+      final databaseService = DatabaseService(userId: user.uid);
+      await databaseService.saveActivity(session.toMap());
+    }
   }
 
   @override

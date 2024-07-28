@@ -5,11 +5,13 @@ class TimerTracker extends ChangeNotifier {
   Timer? _timer;
   Duration _elapsed = Duration();
   bool _isPaused = false;
+  DateTime? startTime;
 
   String get formattedTime => _formatDuration(_elapsed);
 
   void startTracking() {
-    _elapsed = Duration(); // Reset elapsed time on start
+    _elapsed = Duration();
+    startTime = DateTime.now(); // Reset elapsed time on start
     _timer = Timer.periodic(Duration(seconds: 1), _onTick);
   }
 
