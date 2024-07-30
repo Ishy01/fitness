@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/common/color_extension.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/notification_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
 import 'package:flutter/material.dart';
+import 'package:fitness/models/progress.dart';
 import 'progress_chart.dart';
 import 'summary_card.dart';
 import 'recommendation_card.dart';
@@ -16,44 +19,65 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // final HealthConnectService _healthConnectService = HealthConnectService();
-  // String _steps = '0';
-  // String _calories = '0';
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _fetchHealthData();
-  // }
-
-  // Future<void> _fetchHealthData() async {
-  //   DateTime startTime = DateTime.now().subtract(Duration(days: 1));
-  //   DateTime endTime = DateTime.now();
-  //   var data = await _healthConnectService.getRecords(startTime, endTime);
-
-  //   setState(() {
-  //     _steps = data[HealthConnectDataType.Steps.name]?.toString() ?? '0';
-  //     _calories = data[HealthConnectDataType.TotalCaloriesBurned.name]?.toString() ?? '0';
-  //   });
-  // }
-
   String _stepCountValue = '0';
   double _caloriesBurned = 0.0;
   Stream<StepCount>? _stepCountStream;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _currentUser;
+  int _activeIndex = 0;
+  int _workoutsCompleted = 0;
+  double _distanceCovered = 0.0;
+  int _initialSteps = 0;
+  int _lastResetDay = -1;
+  final _pageController = PageController();
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _activeIndex = index;
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    _initializeCurrentUser();
     _stepCountStream = Pedometer.stepCountStream;
     _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
   }
 
-  void _onStepCount(StepCount event) {
-    setState(() {
-      _stepCountValue = event.steps.toString();
-      _caloriesBurned = calculateCalories(event.steps);
-    });
+  Future<void> _initializeCurrentUser() async {
+    _currentUser = _auth.currentUser;
+    setState(() {});
   }
+
+  void _onStepCount(StepCount event) {
+  DateTime now = DateTime.now();
+  int currentDay = now.day;
+
+  if (_lastResetDay != currentDay) {
+    // Reset baseline for a new day
+    _initialSteps = event.steps;
+    _lastResetDay = currentDay;
+  }
+
+  // Define dailySteps outside the setState block
+  int dailySteps = event.steps - _initialSteps;
+
+  setState(() {
+    _stepCountValue = dailySteps.toString();
+    _caloriesBurned = calculateCalories(dailySteps);
+    _distanceCovered = calculateDistance(dailySteps);
+  });
+
+  _updateDailyProgress(dailySteps, _caloriesBurned);
+}
+
 
   void _onStepCountError(error) {
     print('Error: $error');
@@ -67,6 +91,28 @@ class _HomeScreenState extends State<HomeScreen> {
     return steps * 0.04;
   }
 
+  double calculateDistance(int steps) {
+    return steps * 0.0008; // distance in kilometers
+  }
+
+  void _updateDailyProgress(int steps, double calories) async {
+    if (_currentUser == null) return;
+
+    final progressRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('progress')
+        .doc(DateTime.now().toIso8601String().substring(0, 10));
+
+    final progressData = ProgressData(
+      date: DateTime.now(),
+      steps: steps,
+      calories: calories,
+      workouts: 0,
+    );
+
+    await progressRef.set(progressData.toMap(), SetOptions(merge: true));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +147,69 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                // Handle chart tap, navigate to detailed progress view
-              },
-              child: ProgressChart(),
+            Container(
+              height: 300, // Adjusted height to fit all content
+              child: Column(
+                children: [
+                  // Title above the chart
+                  Text(
+                    _activeIndex == 0
+                        ? 'Steps'
+                        : _activeIndex == 1
+                            ? 'Calories'
+                            : 'Workouts',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  // PageView with ProgressChart
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      children: [
+                        ProgressChart(
+                          userId: _currentUser!.uid,
+                          chartType: 'steps',
+                          activeIndex: _activeIndex,
+                        ),
+                        ProgressChart(
+                          userId: _currentUser!.uid,
+                          chartType: 'calories',
+                          activeIndex: _activeIndex,
+                        ),
+                        ProgressChart(
+                          userId: _currentUser!.uid,
+                          chartType: 'workouts',
+                          activeIndex: _activeIndex,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 14,
+                  ),
+                  // Dots indicatorSizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 0; i < 3; i++)
+                        Container(
+                          margin: EdgeInsets.symmetric(horizontal: 4),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                _activeIndex == i ? Colors.blue : Colors.grey,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: 32),
             Text(
@@ -132,10 +236,12 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 SummaryCard(
                     title: 'Distance',
-                    value: '5.2 km',
+                    value: '${_distanceCovered.toStringAsFixed(2)} km',
                     icon: Icons.directions_run),
                 SummaryCard(
-                    title: 'Workouts', value: '3', icon: Icons.fitness_center),
+                    title: 'Workouts',
+                    value: _workoutsCompleted.toString(),
+                    icon: Icons.fitness_center),
               ],
             ),
             SizedBox(height: 32),
