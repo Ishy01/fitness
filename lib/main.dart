@@ -7,6 +7,7 @@ import 'package:fitness/screens/goal/goal_screen.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/home_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
+import 'package:fitness/screens/login/complete_profile_view.dart';
 import 'package:fitness/screens/login/login_view.dart';
 import 'package:fitness/screens/login/signup_view.dart';
 import 'package:fitness/screens/main_tab/main_screen.dart';
@@ -16,6 +17,7 @@ import 'package:fitness/services/authentication.dart';
 import 'package:fitness/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +46,7 @@ class MyApp extends StatelessWidget {
             providers: [
               if (user != null)
                 Provider<DatabaseService>(create: (_) => DatabaseService(userId: user.uid)),
+                Provider<AuthService>(create: (_) => AuthService()),
             ],
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
@@ -72,6 +75,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class AuthChecker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -86,8 +90,6 @@ class AuthChecker extends StatelessWidget {
     );
   }
 }
-
-
 
 
 

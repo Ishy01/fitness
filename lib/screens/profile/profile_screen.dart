@@ -1,11 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/common/color_extension.dart';
-import 'package:fitness/screens/profile/profile_stat_card.dart';
+import 'package:fitness/services/authentication.dart';
 import 'package:flutter/material.dart';
+import 'package:fitness/screens/login/login_view.dart';
 import 'package:fitness/services/database.dart';
-import 'profile_header.dart';
+import 'package:provider/provider.dart';
+import 'profile_pic/profile_header.dart';
 import 'profile_section_header.dart';
 import 'profile_list_tile.dart';
+import 'profile_stat_card.dart';
+import 'account/personal_data_screen.dart';
+import 'account/achievements_screen.dart';
+import 'account/activity_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -22,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? weight;
   String? age;
   String? dateOfBirth;
+  String? profilePictureUrl;
   bool isLoading = true;
 
   @override
@@ -42,9 +49,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height = userData.height != null ? '${userData.height}m' : 'Unknown';
           weight = userData.weight != null ? '${userData.weight}kg' : 'Unknown';
           dateOfBirth = userData.dateOfBirth ?? 'Unknown';
+          profilePictureUrl = userData.profilePictureUrl ?? 'assets/default_profile_picture.png';
           isLoading = false;
         });
       }
+    } else {
+      // Handle the case when the user is null (logged out)
+      setState(() {
+        firstName = null;
+        lastName = null;
+        height = null;
+        weight = null;
+        dateOfBirth = null;
+        profilePictureUrl = null;
+        isLoading = false;
+      });
     }
   }
 
@@ -59,7 +78,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onListTileTap(String title) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title pressed')));
+    switch (title) {
+      case 'Personal Data':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => PersonalDataScreen()));
+        break;
+      case 'Achievements':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => AchievementsScreen()));
+        break;
+      case 'Activity History':
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityHistoryScreen()));
+        break;
+    }
   }
 
   Future<void> _showLogoutDialog() async {
@@ -80,6 +109,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text('Log Out'),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
+                // Navigator.pushReplacement(context,
+                //         MaterialPageRoute(builder: (context) => LoginView()));
                 Navigator.of(context).pushReplacementNamed('/login');
               },
             ),
@@ -103,14 +134,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align the column to the left
                   children: [
-                    ProfileHeader(
-                      firstName: firstName ?? 'First Name',
-                      lastName: lastName ?? 'Last Name',
-                      onEdit: () {
-                        // Handle edit button tap
-                      },
+                    Align(
+                      alignment: Alignment.center,
+                      child: ProfileHeader(
+                        firstName: firstName ?? 'First Name',
+                        lastName: lastName ?? 'Last Name',
+                        profilePictureUrl: profilePictureUrl,
+                      ),
                     ),
                     SizedBox(height: 20),
                     Row(
@@ -134,19 +166,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => _onListTileTap('Personal Data'),
                     ),
                     ProfileListTile(
-                      title: 'Achievement',
+                      title: 'Achievements',
                       icon: Icons.star,
-                      onTap: () => _onListTileTap('Achievement'),
+                      onTap: () => _onListTileTap('Achievements'),
                     ),
                     ProfileListTile(
                       title: 'Activity History',
                       icon: Icons.history,
                       onTap: () => _onListTileTap('Activity History'),
-                    ),
-                    ProfileListTile(
-                      title: 'Workout Progress',
-                      icon: Icons.fitness_center,
-                      onTap: () => _onListTileTap('Workout Progress'),
                     ),
                     SizedBox(height: 20),
                     ProfileSectionHeader(title: 'Notification'),
@@ -179,12 +206,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     SizedBox(height: 20),
                     Center(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red, // Set the button color to red
-                        ),
+                      child: ElevatedButton.icon(
                         onPressed: _showLogoutDialog,
-                        child: Text('Log Out'),
+                        icon: Icon(Icons.logout, color: Colors.red),
+                        label: Text('Log Out', style: TextStyle(color: Colors.red)),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          side: BorderSide(color: Colors.red),
+                        ),
                       ),
                     ),
                   ],

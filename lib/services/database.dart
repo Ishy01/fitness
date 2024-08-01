@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 class DatabaseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String userId;
+  final CollectionReference userCollection = FirebaseFirestore.instance.collection('users');
 
   DatabaseService({required this.userId});
 
@@ -38,6 +39,10 @@ class DatabaseService {
     } catch (e) {
       print(e.toString());
     }
+  }
+
+  Future<void> updateUser(UserModel user) async {
+    return await userCollection.doc(user.uid).set(user.toMap(), SetOptions(merge: true));
   }
 
   // Get a specific activity
