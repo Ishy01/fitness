@@ -7,7 +7,6 @@ import 'package:fitness/screens/goal/goal_screen.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/home_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
-import 'package:fitness/screens/login/complete_profile_view.dart';
 import 'package:fitness/screens/login/login_view.dart';
 import 'package:fitness/screens/login/signup_view.dart';
 import 'package:fitness/screens/main_tab/main_screen.dart';

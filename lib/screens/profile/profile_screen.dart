@@ -78,6 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onListTileTap(String title) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
     switch (title) {
       case 'Personal Data':
         Navigator.push(context, MaterialPageRoute(builder: (context) => PersonalDataScreen()));

@@ -1,4 +1,5 @@
 class ActivitySession {
+  final String activityId;
   final String userId;
   final String activityType;
   final DateTime startTime;
@@ -9,6 +10,7 @@ class ActivitySession {
   final double speed;
 
   ActivitySession({
+    required this.activityId,
     required this.userId,
     required this.activityType,
     required this.startTime,
@@ -21,6 +23,7 @@ class ActivitySession {
 
   Map<String, dynamic> toMap() {
     return {
+      'activityId': activityId,
       'userId': userId,
       'activityType': activityType,
       'startTime': startTime.toIso8601String(),
@@ -34,6 +37,7 @@ class ActivitySession {
 
   factory ActivitySession.fromMap(Map<String, dynamic> map) {
     return ActivitySession(
+      activityId: map['activityId'],
       userId: map['userId'],
       activityType: map['activityType'],
       startTime: DateTime.parse(map['startTime']),

@@ -46,50 +46,38 @@ class ActivityTrackingScreen extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             activityName,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          SizedBox(height: 16),
+          Column(
             children: [
-              Column(
-                children: [
-                  Text('Time'),
-                  Text(time),
-                ],
+              Text(
+                'Time',
+                style: TextStyle(fontSize: 18),
               ),
-              Column(
-                children: [
-                  Text('Speed'),
-                  Text(speed),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('Distance'),
-                  Text(distance),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('Calories'),
-                  Text(calories),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('Steps'),
-                  Text(steps),
-                ],
+              Text(
+                time,
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatColumn('Speed', speed),
+              _buildStatColumn('Distance', distance),
+              _buildStatColumn('Calories', calories),
+              _buildStatColumn('Steps', steps),
+            ],
+          ),
+          SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               StopButton(onPressed: onStop),
               isPaused
@@ -99,6 +87,22 @@ class ActivityTrackingScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 16),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/models/activity_session.dart';
 import 'package:fitness/services/database.dart';
@@ -96,39 +97,47 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   void _showSaveOrDiscardDialog() {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Activity Finished'),
-        content: Text('Do you want to save or discard this activity?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Handle discard action
-              Navigator.of(context).pop();
-            },
-            child: Text('Discard'),
-          ),
-          TextButton(
-            onPressed: () async {
-              // Handle save action
-              await _saveActivity();
-              Navigator.of(context).pop();
-            },
-            child: Text('Save'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Activity Finished'),
+          content: Text('Do you want to save or discard this activity?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Handle discard action
+                Navigator.of(context).pop();
+              },
+              child: Text('Discard'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Handle save action
+                await _saveActivity();
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _saveActivity() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      // Create a new document reference with an auto-generated ID
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('activities')
+          .doc();
+
+      final activityId = docRef.id;
       final session = ActivitySession(
+        activityId: activityId,
         userId: user.uid,
         activityType: currentActivity,
         startTime: _timerTracker!.startTime!,
@@ -145,6 +154,13 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
 
       final databaseService = DatabaseService(userId: user.uid);
       await databaseService.saveActivity(session.toMap());
+
+      // Show snackbar notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Activity saved successfully!'),
+        ),
+      );
     }
   }
 
