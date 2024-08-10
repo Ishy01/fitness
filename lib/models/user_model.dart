@@ -1,12 +1,13 @@
 class UserModel {
   final String uid;
-  final String email;
-  final String firstName;
-  final String lastName;
+  final String? email;
+  final String? firstName;
+  final String? lastName;
   String? gender;
   String? dateOfBirth;
   String? weight;
   String? height;
+  String? profilePictureUrl;
 
   UserModel({
     required this.uid,
@@ -17,6 +18,7 @@ class UserModel {
     this.dateOfBirth,
     this.weight,
     this.height,
+    this.profilePictureUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +31,7 @@ class UserModel {
       'dateOfBirth': dateOfBirth,
       'weight': weight,
       'height': height,
+      'profilePictureUrl': profilePictureUrl,
     };
   }
 
@@ -42,6 +45,7 @@ class UserModel {
       dateOfBirth: map['dateOfBirth'],
       weight: map['weight'],
       height: map['height'],
+      profilePictureUrl: map['profilePictureUrl'],
     );
   }
 }

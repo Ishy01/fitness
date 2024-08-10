@@ -1,20 +1,30 @@
-import 'package:fitness/common_widgets/pause_button.dart';
-import 'package:fitness/common_widgets/stop_button.dart';
 import 'package:flutter/material.dart';
+import '../../common_widgets/pause_button.dart';
+import '../../common_widgets/resume_button.dart';
+import '../../common_widgets/stop_button.dart';
 
 class ActivityTrackingScreen extends StatelessWidget {
+  final String activityName;
   final String time;
   final String speed;
   final String distance;
+  final String calories;
+  final String steps;
+  final bool isPaused;
   final VoidCallback onStop;
   final VoidCallback onPause;
 
-  ActivityTrackingScreen(
-      {required this.time,
-      required this.speed,
-      required this.distance,
-      required this.onStop,
-      required this.onPause});
+  ActivityTrackingScreen({
+    required this.activityName,
+    required this.time,
+    required this.speed,
+    required this.distance,
+    required this.calories,
+    required this.steps,
+    required this.isPaused,
+    required this.onStop,
+    required this.onPause,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,45 +46,63 @@ class ActivityTrackingScreen extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'Tracking',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            activityName,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          SizedBox(height: 16),
+          Column(
             children: [
-              Column(
-                children: [
-                  Text('Time'),
-                  Text(time),
-                ],
+              Text(
+                'Time',
+                style: TextStyle(fontSize: 18),
               ),
-              Column(
-                children: [
-                  Text('Speed'),
-                  Text(speed),
-                ],
-              ),
-              Column(
-                children: [
-                  Text('Distance'),
-                  Text(distance),
-                ],
+              Text(
+                time,
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatColumn('Speed', speed),
+              _buildStatColumn('Distance', distance),
+              _buildStatColumn('Calories', calories),
+              _buildStatColumn('Steps', steps),
+            ],
+          ),
+          SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               StopButton(onPressed: onStop),
-              PauseButton(onPressed: onPause),
+              isPaused
+                  ? ResumeButton(onPressed: onPause)
+                  : PauseButton(onPressed: onPause),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 16),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }
