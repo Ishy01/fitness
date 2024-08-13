@@ -218,6 +218,7 @@ class DatabaseService {
 
       // Update the goal's progress in Firestore
       await updateGoalProgress(goal.id, progress);
+
     }
   }
 

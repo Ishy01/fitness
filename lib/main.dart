@@ -6,6 +6,7 @@ import 'package:fitness/screens/activity/activity_screen.dart';
 import 'package:fitness/screens/goal/goal_screen.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/home_screen.dart';
+import 'package:fitness/screens/home/notification_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
 import 'package:fitness/screens/login/login_view.dart';
 import 'package:fitness/screens/login/signup_view.dart';
@@ -14,15 +15,18 @@ import 'package:fitness/screens/on_boarding/started_view.dart';
 import 'package:fitness/screens/profile/profile_screen.dart';
 import 'package:fitness/services/authentication.dart';
 import 'package:fitness/services/database.dart';
+import 'package:fitness/services/notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await Notifications().initNotifications();
   runApp(const MyApp());
 }
 
@@ -44,8 +48,9 @@ class MyApp extends StatelessWidget {
           return MultiProvider(
             providers: [
               if (user != null)
-                Provider<DatabaseService>(create: (_) => DatabaseService(userId: user.uid)),
-                Provider<AuthService>(create: (_) => AuthService()),
+                Provider<DatabaseService>(
+                    create: (_) => DatabaseService(userId: user.uid)),
+              Provider<AuthService>(create: (_) => AuthService()),
             ],
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
@@ -56,6 +61,7 @@ class MyApp extends StatelessWidget {
                 primaryColor: TextColor.primaryColor1,
               ),
               home: AuthChecker(),
+              navigatorKey: navigatorKey,
               routes: {
                 '/home': (context) => HomeScreen(),
                 '/profile': (context) => ProfileScreen(),
@@ -65,6 +71,7 @@ class MyApp extends StatelessWidget {
                 '/recipe': (context) => RecipeScreen(),
                 '/login': (context) => LoginView(),
                 '/signup': (context) => SignUpView(),
+                '/notifications': (context) => NotificationScreen()
               },
             ),
           );
@@ -73,7 +80,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 
 class AuthChecker extends StatelessWidget {
   @override
@@ -89,6 +95,3 @@ class AuthChecker extends StatelessWidget {
     );
   }
 }
-
-
-

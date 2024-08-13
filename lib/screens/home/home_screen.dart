@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:fitness/common/color_extension.dart';
 import 'package:fitness/screens/home/gym_screen.dart';
 import 'package:fitness/screens/home/notification_screen.dart';
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _initialSteps = 0;
   int _lastResetDay = -1;
   final _pageController = PageController();
+  bool _hasUnreadNotifications = false;
 
   void _onPageChanged(int index) {
     setState(() {
@@ -49,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _initializeCurrentUser();
     _stepCountStream = Pedometer.stepCountStream;
     _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
+    initNotifications();
   }
 
   Future<void> _initializeCurrentUser() async {
@@ -114,6 +118,20 @@ class _HomeScreenState extends State<HomeScreen> {
     await progressRef.set(progressData.toMap(), SetOptions(merge: true));
   }
 
+  Future<void> initNotifications() async {
+    final _firebaseMessaging = FirebaseMessaging.instance;
+    
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      setState(() {
+        _hasUnreadNotifications = true;
+      });
+      print("Notification received: ${message.notification?.title}");
+    });
+
+    await _firebaseMessaging.requestPermission();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,11 +141,34 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Home'),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.notifications_none_outlined,
-              size: 30,
+            icon: Stack(
+              children: [
+                Icon(
+                  Icons.notifications_none_outlined,
+                  size: 30,
+                ),
+                if (_hasUnreadNotifications)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 8,
+                        minHeight: 8,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             onPressed: () {
+              setState(() {
+                _hasUnreadNotifications = false; // Reset when the bell is tapped
+              });
               Navigator.push(
                 context,
                 MaterialPageRoute(
