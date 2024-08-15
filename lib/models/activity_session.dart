@@ -8,6 +8,7 @@ class ActivitySession {
   final int steps;
   final double calories;
   final double speed;
+  final List<Map<String, double>> route;
 
   ActivitySession({
     required this.activityId,
@@ -19,6 +20,7 @@ class ActivitySession {
     required this.steps,
     required this.calories,
     required this.speed,
+    required this.route,
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +34,9 @@ class ActivitySession {
       'steps': steps,
       'calories': calories,
       'speed': speed,
+      'route': route
+          .map((point) => {'lat': point['lat'], 'lng': point['lng']})
+          .toList(),
     };
   }
 
@@ -42,10 +47,16 @@ class ActivitySession {
       activityType: map['activityType'],
       startTime: DateTime.parse(map['startTime']),
       endTime: DateTime.parse(map['endTime']),
-      distance: map['distance'],
+      distance: (map['distance'] as num).toDouble(),
       steps: map['steps'],
-      calories: map['calories'],
-      speed: map['speed'],
+      calories: (map['calories'] as num).toDouble(),
+      speed: (map['speed'] as num).toDouble(),
+      route: (map['route'] as List<dynamic>)
+          .map<Map<String, double>>((point) => {
+                'lat': (point['lat'] as num).toDouble(),
+                'lng': (point['lng'] as num).toDouble(),
+              })
+          .toList(),
     );
   }
 }

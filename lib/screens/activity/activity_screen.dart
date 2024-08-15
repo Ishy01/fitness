@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/models/activity_session.dart';
+import 'package:fitness/screens/activity/activity_map.dart';
 import 'package:fitness/services/database.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -45,9 +46,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       await Permission.activityRecognition.request();
     }
 
-    var locationStatus = await Permission.location.status;
+    var locationStatus = await Permission.locationWhenInUse.status;
     if (locationStatus.isDenied) {
-      await Permission.location.request();
+      await Permission.locationWhenInUse.request();
     }
   }
 
@@ -150,6 +151,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           _locationTracker!.speed,
         ),
         speed: _locationTracker!.speed,
+        route: _locationTracker!.route, // Accessing the route from LocationTracker
       );
 
       final databaseService = DatabaseService(userId: user.uid);
@@ -176,11 +178,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         backgroundColor: TextColor.white,
         body: Stack(
           children: [
-            Placeholder(
-              fallbackHeight: MediaQuery.of(context).size.height,
-              fallbackWidth: double.infinity,
-              color: Colors.grey,
-            ),
+            ActivityMapScreen(),
             if (!isTracking)
               Positioned(
                 top: 50,
@@ -198,7 +196,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                 right: 0,
                 child: Consumer3<TimerTracker, LocationTracker, StepTracker>(
                   builder: (context, timer, location, steps, child) {
-                    double caloriesBurned = _caloriesTracker!.calculateCaloriesBurned(
+                    double caloriesBurned =
+                        _caloriesTracker!.calculateCaloriesBurned(
                       location.totalDistance,
                       userWeight,
                       location.speed,
@@ -206,8 +205,10 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                     return ActivityTrackingScreen(
                       activityName: currentActivity,
                       time: timer.formattedTime,
-                      speed: '${(location.speed * 3.6).toStringAsFixed(2)} km/h',
-                      distance: '${(location.totalDistance / 1000).toStringAsFixed(2)} km',
+                      speed:
+                          '${(location.speed * 3.6).toStringAsFixed(2)} km/h',
+                      distance:
+                          '${(location.totalDistance / 1000).toStringAsFixed(2)} km',
                       steps: steps.steps.toString(),
                       calories: caloriesBurned.toStringAsFixed(2),
                       isPaused: isPaused,
