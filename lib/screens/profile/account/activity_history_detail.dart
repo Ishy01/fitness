@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitness/models/activity_session.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ActivityDetailScreen extends StatelessWidget {
   final ActivitySession activity;
@@ -13,11 +14,25 @@ class ActivityDetailScreen extends StatelessWidget {
     final steps = activity.steps;
     final calories = activity.calories;
 
+    // Convert the route to LatLng for Google Maps
+    final List<LatLng> route = activity.route.map((point) {
+      // Access the latitude and longitude from the Map
+      return LatLng(point['latitude']!, point['longitude']!);
+    }).toList();
+
+    // Create a polyline to display the route
+    final Polyline routePolyline = Polyline(
+      polylineId: PolylineId('route'),
+      points: route,
+      color: Colors.blue,
+      width: 4,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Activity Details'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,6 +66,40 @@ class ActivityDetailScreen extends StatelessWidget {
             Text(
               'Calories Burned: ${calories.toStringAsFixed(2)} kcal',
               style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 32),
+
+            // Display the map
+            Container(
+              height: 300,
+              child: route.isNotEmpty
+                  ? GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: route[0], // Set to the first point in the route
+                        zoom: 15,
+                      ),
+                      polylines: {routePolyline},
+                      markers: {
+                        if (route.isNotEmpty)
+                          Marker(
+                            markerId: MarkerId('start'),
+                            position: route.first,
+                            infoWindow: InfoWindow(title: 'Start'),
+                          ),
+                        if (route.isNotEmpty)
+                          Marker(
+                            markerId: MarkerId('end'),
+                            position: route.last,
+                            infoWindow: InfoWindow(title: 'End'),
+                          ),
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        'No route data available',
+                        style: TextStyle(color: Colors.red, fontSize: 18),
+                      ),
+                    ),
             ),
           ],
         ),

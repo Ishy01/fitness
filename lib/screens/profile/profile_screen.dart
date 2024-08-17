@@ -1,10 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/common/color_extension.dart';
-import 'package:fitness/services/authentication.dart';
+import 'package:fitness/screens/profile/other/contact_us.dart';
+import 'package:fitness/screens/profile/other/privacy_policy.dart';
 import 'package:flutter/material.dart';
-import 'package:fitness/screens/login/login_view.dart';
 import 'package:fitness/services/database.dart';
-import 'package:provider/provider.dart';
+import 'profile_pic/profile_header.dart';
+import 'profile_section_header.dart';
+import 'profile_list_tile.dart';
+import 'profile_stat_card.dart';
+import 'account/personal_data_screen.dart';
+import 'account/achievements_screen.dart';
+import 'account/activity_history_screen.dart';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fitness/common/color_extension.dart';
+import 'package:fitness/screens/profile/other/contact_us.dart';
+import 'package:fitness/screens/profile/other/privacy_policy.dart';
+import 'package:flutter/material.dart';
+import 'package:fitness/services/database.dart';
 import 'profile_pic/profile_header.dart';
 import 'profile_section_header.dart';
 import 'profile_list_tile.dart';
@@ -77,18 +90,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return age;
   }
 
-  void _onListTileTap(String title) {
+  void _onListTileTap(String title) async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
     switch (title) {
       case 'Personal Data':
-        Navigator.push(context, MaterialPageRoute(builder: (context) => PersonalDataScreen()));
-        break;
+      final updatedUser = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PersonalDataScreen()),
+      );
+      // If updatedUser is not null, update the UI
+      if (updatedUser != null) {
+        setState(() {
+          firstName = updatedUser.firstName;
+          lastName = updatedUser.lastName;
+          height = '${updatedUser.height}m';
+          weight = '${updatedUser.weight}kg';
+          dateOfBirth = updatedUser.dateOfBirth;
+
+          // Calculate and update the age
+          age = _calculateAge(dateOfBirth ?? 'Unknown').toString();
+        });
+      }
+      break;
       case 'Achievements':
         Navigator.push(context, MaterialPageRoute(builder: (context) => AchievementsScreen()));
         break;
       case 'Activity History':
         Navigator.push(context, MaterialPageRoute(builder: (context) => ActivityHistoryScreen()));
         break;
+      case 'Contact Us':
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ContactUsScreen()));
+      break;
+    case 'Privacy Policy':
+      Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyScreen()));
+      break;
     }
   }
 
@@ -110,8 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text('Log Out'),
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
-                // Navigator.pushReplacement(context,
-                //         MaterialPageRoute(builder: (context) => LoginView()));
                 Navigator.of(context).pushReplacementNamed('/login');
               },
             ),
@@ -201,25 +234,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => _onListTileTap('Privacy Policy'),
                     ),
                     ProfileListTile(
-                      title: 'Settings',
-                      icon: Icons.settings,
-                      onTap: () => _onListTileTap('Settings'),
-                    ),
-                    SizedBox(height: 20),
-                    Center(
-                      child: ElevatedButton.icon(
-                        onPressed: _showLogoutDialog,
-                        icon: Icon(Icons.logout, color: Colors.red),
-                        label: Text('Log Out', style: TextStyle(color: Colors.red)),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          side: BorderSide(color: Colors.red),
-                        ),
-                      ),
+                      title: 'Log Out',
+                      icon: Icons.logout,
+                      iconColor: Colors.red,
+                      textColor: Colors.red,
+                      onTap: _showLogoutDialog,
                     ),
                   ],
                 ),

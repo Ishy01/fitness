@@ -32,7 +32,7 @@ class _ActivityMapScreenState extends State<ActivityMapScreen> {
     final locationTracker = Provider.of<LocationTracker>(context, listen: false);
     setState(() {
       _routeCoords = locationTracker.routeCoords;
-      _polylines.add(
+      _polylines = {
         Polyline(
           polylineId: PolylineId('route'),
           visible: true,
@@ -40,17 +40,18 @@ class _ActivityMapScreenState extends State<ActivityMapScreen> {
           width: 5,
           color: Colors.blue,
         ),
-      );
+      };
 
-      // Add marker for the current position
+      // Add or update marker for the current position
       if (_routeCoords.isNotEmpty) {
         LatLng currentPosition = _routeCoords.last;
-        _markers.add(
+        _markers = {
           Marker(
             markerId: MarkerId('current_position'),
             position: currentPosition,
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           ),
-        );
+        };
 
         // Move the camera to the current position
         _mapController?.animateCamera(
@@ -79,7 +80,7 @@ class _ActivityMapScreenState extends State<ActivityMapScreen> {
     final locationTracker = Provider.of<LocationTracker>(context);
     final initialPosition = locationTracker.routeCoords.isNotEmpty
         ? locationTracker.routeCoords.first
-        : LatLng(37.7749, -122.4194); // Default to San Francisco if no data
+        : LatLng(6.6928, -1.5713); // Default to Kumasi
 
     return Stack(
       children: [
@@ -89,6 +90,7 @@ class _ActivityMapScreenState extends State<ActivityMapScreen> {
             zoom: 14.0,
           ),
           polylines: _polylines,
+          markers: _markers,
           onMapCreated: _onMapCreated,
           onCameraIdle: () {
             if (_mapLoadError != null) {

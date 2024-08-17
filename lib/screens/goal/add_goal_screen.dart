@@ -1,3 +1,4 @@
+import 'package:fitness/common_widgets/rounded_button.dart';
 import 'package:flutter/material.dart';
 import 'package:fitness/models/goal_model.dart';
 import 'package:intl/intl.dart';
@@ -90,9 +91,9 @@ class _AddGoalScreenState extends State<AddGoalScreen> {
                 keyboardType: TextInputType.number,
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              RoundedButton(
+                title: "Save Goal",
                 onPressed: _saveGoal,
-                child: Text('Save Goal'),
               ),
             ],
           ),

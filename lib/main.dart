@@ -71,7 +71,7 @@ class MyApp extends StatelessWidget {
                 '/recipe': (context) => RecipeScreen(),
                 '/login': (context) => LoginView(),
                 '/signup': (context) => SignUpView(),
-                '/notifications': (context) => NotificationScreen()
+                '/notifications': (context) => NotificationScreen(),
               },
             ),
           );

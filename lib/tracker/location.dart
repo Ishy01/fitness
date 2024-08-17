@@ -12,28 +12,57 @@ class LocationTracker extends ChangeNotifier {
   bool _isPaused = false;
 
   Future<void> startTracking() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled, handle appropriately
+      return Future.error('Location services are disabled.');
+    }
+
+    // Check location permissions
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied.');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied.');
+    }
+
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 1,
+        distanceFilter: 1, // Adjust filter if needed
       ),
-    ).listen((Position position) {
-      if (_previousPosition != null && !_isPaused) {
-        totalDistance += Geolocator.distanceBetween(
-          _previousPosition!.latitude,
-          _previousPosition!.longitude,
-          position.latitude,
-          position.longitude,
-        );
-        speed = position.speed;
-        routeCoords.add(LatLng(position.latitude, position.longitude));
-      } else if (_previousPosition == null && !_isPaused) {
-        // Add the initial position to the route
-        routeCoords.add(LatLng(position.latitude, position.longitude));
-      }
-      _previousPosition = position;
-      notifyListeners();
-    });
+    ).listen(
+      (Position position) {
+        if (_previousPosition != null && !_isPaused) {
+          totalDistance += Geolocator.distanceBetween(
+            _previousPosition!.latitude,
+            _previousPosition!.longitude,
+            position.latitude,
+            position.longitude,
+          );
+          speed = position.speed;
+          routeCoords.add(LatLng(position.latitude, position.longitude));
+        } else if (_previousPosition == null && !_isPaused) {
+          // Add the initial position to the route
+          routeCoords.add(LatLng(position.latitude, position.longitude));
+        }
+        _previousPosition = position;
+        notifyListeners();
+      },
+      onError: (error) {
+        // Handle error appropriately
+        stopTracking();
+      },
+    );
   }
 
   void stopTracking() {
@@ -55,7 +84,6 @@ class LocationTracker extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Getter to retrieve the route as a list of maps with 'lat' and 'lng'
   List<Map<String, double>> get route => routeCoords
       .map((coord) => {'lat': coord.latitude, 'lng': coord.longitude})
       .toList();
