@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitness/models/activity_session.dart';
+import 'package:fitness/models/daily_progress.dart';
+import 'package:fitness/models/workout_model.dart';
 import '../models/user_model.dart';
 import '../models/goal_model.dart';
 
@@ -108,6 +110,66 @@ class DatabaseService {
       return [];
     }
   }
+
+
+// Save workout to Firestore
+  Future<void> saveWorkout(Map<String, dynamic> workoutData) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('workouts')
+          .add(workoutData);
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+// Get all workouts for a user
+Future<List<WorkoutModel>> getUserWorkouts() async {
+  try {
+    QuerySnapshot snapshot = await userCollection.doc(userId).collection('workouts').get();
+    return snapshot.docs
+        .map((doc) => WorkoutModel.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
+  } catch (e) {
+    print(e.toString());
+    return [];
+  }
+}
+
+// Save or update daily progress
+  Future<void> saveDailyProgress(DailyProgressData progress) async {
+    try {
+      await userCollection
+          .doc(userId)
+          .collection('daily_progress')
+          .doc(progress.date.toIso8601String().substring(0, 10))
+          .set(progress.toJson(), SetOptions(merge: true));
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+   // Fetch daily progress
+  Future<DailyProgressData?> getDailyProgress(DateTime date) async {
+    try {
+      DocumentSnapshot doc = await userCollection
+          .doc(userId)
+          .collection('daily_progress')
+          .doc(date.toIso8601String().substring(0, 10))
+          .get();
+
+      if (doc.exists) {
+        return DailyProgressData.fromJson(doc.data() as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
 
   // Add a new goal for the user
   Future<void> addGoal(GoalModel goal) async {

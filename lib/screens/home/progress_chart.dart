@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fitness/models/progress.dart';
+import 'package:fitness/models/daily_progress.dart';
 import 'package:fitness/common/color_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -23,7 +23,7 @@ class ProgressChart extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
-            .collection('progress')
+            .collection('daily_progress')
             .orderBy('date', descending: true)
             .limit(7)
             .snapshots(),
@@ -33,7 +33,7 @@ class ProgressChart extends StatelessWidget {
           }
 
           final progressData = snapshot.data!.docs.map((doc) {
-            return ProgressData.fromMap(doc.data() as Map<String, dynamic>);
+            return DailyProgressData.fromJson(doc.data() as Map<String, dynamic>);
           }).toList();
 
           final today = DateTime.now();
@@ -46,7 +46,7 @@ class ProgressChart extends StatelessWidget {
             final dayDate = today.subtract(Duration(days: 6 - i));
             final data = progressData.firstWhere(
               (pd) => DateFormat('yyyy-MM-dd').format(pd.date) == DateFormat('yyyy-MM-dd').format(dayDate),
-              orElse: () => ProgressData(date: dayDate, steps: 0, calories: 0, workouts: 0),
+              orElse: () => DailyProgressData(date: dayDate, steps: 0, calories: 0, workouts: 0, distance: 0),
             );
 
             double value = 0.0;

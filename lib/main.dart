@@ -13,6 +13,7 @@ import 'package:fitness/screens/login/signup_view.dart';
 import 'package:fitness/screens/main_tab/main_screen.dart';
 import 'package:fitness/screens/on_boarding/started_view.dart';
 import 'package:fitness/screens/profile/profile_screen.dart';
+import 'package:fitness/screens/workout/home_workout_screen.dart';
 import 'package:fitness/services/authentication.dart';
 import 'package:fitness/services/database.dart';
 import 'package:fitness/services/notifications.dart';
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
                 '/activities': (context) => ActivitiesScreen(),
                 '/goals': (context) => GoalsScreen(),
                 '/gym': (context) => GymWorkoutScreen(),
+                '/workout': (context) => HomeWorkoutScreen(),
                 '/recipe': (context) => RecipeScreen(),
                 '/login': (context) => LoginView(),
                 '/signup': (context) => SignUpView(),

@@ -8,6 +8,7 @@ class UserModel {
   String? weight;
   String? height;
   String? profilePictureUrl;
+  int? stepGoal; // Add stepGoal here
 
   UserModel({
     required this.uid,
@@ -19,6 +20,7 @@ class UserModel {
     this.weight,
     this.height,
     this.profilePictureUrl,
+    this.stepGoal, // Initialize stepGoal here
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +34,7 @@ class UserModel {
       'weight': weight,
       'height': height,
       'profilePictureUrl': profilePictureUrl,
+      'stepGoal': stepGoal, // Include stepGoal in the map
     };
   }
 
@@ -46,6 +49,7 @@ class UserModel {
       weight: map['weight'],
       height: map['height'],
       profilePictureUrl: map['profilePictureUrl'],
+      stepGoal: map['stepGoal'], // Parse stepGoal from the map
     );
   }
 }

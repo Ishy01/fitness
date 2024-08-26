@@ -12,19 +12,6 @@ import 'account/personal_data_screen.dart';
 import 'account/achievements_screen.dart';
 import 'account/activity_history_screen.dart';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fitness/common/color_extension.dart';
-import 'package:fitness/screens/profile/other/contact_us.dart';
-import 'package:fitness/screens/profile/other/privacy_policy.dart';
-import 'package:flutter/material.dart';
-import 'package:fitness/services/database.dart';
-import 'profile_pic/profile_header.dart';
-import 'profile_section_header.dart';
-import 'profile_list_tile.dart';
-import 'profile_stat_card.dart';
-import 'account/personal_data_screen.dart';
-import 'account/achievements_screen.dart';
-import 'account/activity_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);

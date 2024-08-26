@@ -151,7 +151,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           _locationTracker!.speed,
         ),
         speed: _locationTracker!.speed,
-        route: _locationTracker!.route, // Accessing the route from LocationTracker
+        route: _locationTracker!.routeCoords
+          .map((coord) => {'lat': coord.latitude, 'lng': coord.longitude})
+          .toList(), // Accessing the route from LocationTracker
       );
 
       final databaseService = DatabaseService(userId: user.uid);

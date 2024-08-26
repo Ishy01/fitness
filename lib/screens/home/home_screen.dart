@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:fitness/common/color_extension.dart';
-import 'package:fitness/screens/home/gym_screen.dart';
+import 'package:fitness/models/daily_progress.dart';
 import 'package:fitness/screens/home/notification_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
+import 'package:fitness/screens/workout/home_workout_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:fitness/models/progress.dart';
 import 'progress_chart.dart';
 import 'summary_card.dart';
 import 'recommendation_card.dart';
@@ -34,13 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _pageController = PageController();
   bool _hasUnreadNotifications = false;
 
-  void _onPageChanged(int index) {
-    setState(() {
-      _activeIndex = index;
-    });
-  }
-
-  @override
+   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -50,38 +43,101 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initializeCurrentUser();
+    // _initializeStepCount();  // Fetch initial step count on start
     _stepCountStream = Pedometer.stepCountStream;
     _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
     initNotifications();
+    _fetchAndSetProgressData();
   }
+
+  // Future<void> _initializeStepCount() async {
+  //   // Manually fetch the initial step count when the app starts
+  //   StepCount? initialStepCount;
+
+  //   try {
+  //     await for (var event in Pedometer.stepCountStream) {
+  //       initialStepCount = event;
+  //       break; // Break after fetching the first event
+  //     }
+
+  //     if (initialStepCount != null) {
+  //       DateTime now = DateTime.now();
+  //       int currentDay = now.day;
+
+  //       if (_lastResetDay != currentDay) {
+  //         _saveAndResetDailyProgress();
+  //         _initialSteps = initialStepCount.steps;
+  //         _lastResetDay = currentDay;
+  //       }
+
+  //       int dailySteps = initialStepCount.steps - _initialSteps;
+        
+  //       // Update the UI with the initial step count
+  //       setState(() {
+  //         _stepCountValue = dailySteps.toString();
+  //         _caloriesBurned = calculateCalories(dailySteps);
+  //         _distanceCovered = calculateDistance(dailySteps);
+  //       });
+
+  //       // Save initial progress
+  //       _updateDailyProgress(dailySteps, _caloriesBurned, _workoutsCompleted, _distanceCovered);
+  //     }
+  //   } catch (error) {
+  //     print('Error fetching initial step count: $error');
+  //   }
+  // }
 
   Future<void> _initializeCurrentUser() async {
     _currentUser = _auth.currentUser;
     setState(() {});
   }
 
-  void _onStepCount(StepCount event) {
-  DateTime now = DateTime.now();
-  int currentDay = now.day;
+  Future<void> _fetchAndSetProgressData() async {
+    if (_currentUser == null) return;
 
-  if (_lastResetDay != currentDay) {
-    // Reset baseline for a new day
-    _initialSteps = event.steps;
-    _lastResetDay = currentDay;
+    final progress = await getDailyProgress(DateTime.now());
+
+    if (progress != null) {
+      setState(() {
+        _stepCountValue = progress.steps.toString();
+        _caloriesBurned = progress.calories;
+        _workoutsCompleted = progress.workouts;
+        _distanceCovered = progress.distance;
+      });
+    } else {
+      // Set to default values if no data found for the current day
+      setState(() {
+        _stepCountValue = '0';
+        _caloriesBurned = 0.0;
+        _workoutsCompleted = 0;
+        _distanceCovered = 0.0;
+      });
+    }
   }
 
-  // Define dailySteps outside the setState block
-  int dailySteps = event.steps - _initialSteps;
+  void _onStepCount(StepCount event) {
+    DateTime now = DateTime.now();
+    int currentDay = now.day;
 
-  setState(() {
-    _stepCountValue = dailySteps.toString();
-    _caloriesBurned = calculateCalories(dailySteps);
-    _distanceCovered = calculateDistance(dailySteps);
-  });
+    if (_lastResetDay != currentDay) {
+      // Save previous day data before resetting
+      _saveAndResetDailyProgress();
 
-  _updateDailyProgress(dailySteps, _caloriesBurned);
-}
+      // Reset baseline for a new day
+      _initialSteps = event.steps;
+      _lastResetDay = currentDay;
+    }
 
+    int dailySteps = event.steps - _initialSteps;
+
+    setState(() {
+      _stepCountValue = dailySteps.toString();
+      _caloriesBurned = calculateCalories(dailySteps);
+      _distanceCovered = calculateDistance(dailySteps);
+    });
+
+    _updateDailyProgress(dailySteps, _caloriesBurned, _workoutsCompleted, _distanceCovered);
+  }
 
   void _onStepCountError(error) {
     print('Error: $error');
@@ -99,28 +155,59 @@ class _HomeScreenState extends State<HomeScreen> {
     return steps * 0.0008; // distance in kilometers
   }
 
-  void _updateDailyProgress(int steps, double calories) async {
+  // Future<void> _fetchProgressData() async {
+  //   if (_currentUser == null) return;
+
+  //   final progressRef = FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(_currentUser!.uid)
+  //       .collection('daily_progress')
+  //       .doc(DateTime.now().toIso8601String().substring(0, 10));
+
+  //   final progressSnapshot = await progressRef.get();
+
+  //   if (progressSnapshot.exists) {
+  //     final data = progressSnapshot.data();
+  //     if (data != null) {
+  //       setState(() {
+  //         _stepCountValue = data['steps'].toString();
+  //         _caloriesBurned = data['calories'] ?? 0.0;
+  //         _workoutsCompleted = data['workouts'] ?? 0;
+  //         _distanceCovered = data['distance'] ?? 0.0;
+  //       });
+  //     }
+  //   }
+  // }
+
+  void _saveAndResetDailyProgress() async {
+    await _updateDailyProgress(int.parse(_stepCountValue), _caloriesBurned, _workoutsCompleted, _distanceCovered);
+    
+    // Reset local data
+    setState(() {
+      _stepCountValue = '0';
+      _caloriesBurned = 0.0;
+      _workoutsCompleted = 0;
+      _distanceCovered = 0.0;
+    });
+  }
+
+  Future<void> _updateDailyProgress(int steps, double calories, int workouts, double distance) async {
     if (_currentUser == null) return;
 
-    final progressRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(_currentUser!.uid)
-        .collection('progress')
-        .doc(DateTime.now().toIso8601String().substring(0, 10));
-
-    final progressData = ProgressData(
+    final dailyProgressData = DailyProgressData(
       date: DateTime.now(),
       steps: steps,
       calories: calories,
-      workouts: 0,
+      workouts: workouts,
+      distance: distance,
     );
 
-    await progressRef.set(progressData.toMap(), SetOptions(merge: true));
+    await saveDailyProgress(dailyProgressData);
   }
 
   Future<void> initNotifications() async {
     final _firebaseMessaging = FirebaseMessaging.instance;
-    
+
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       setState(() {
         _hasUnreadNotifications = true;
@@ -131,6 +218,34 @@ class _HomeScreenState extends State<HomeScreen> {
     await _firebaseMessaging.requestPermission();
   }
 
+  Future<DailyProgressData?> getDailyProgress(DateTime date) async {
+    if (_currentUser == null) return null;
+
+    final progressRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('daily_progress')
+        .doc(date.toIso8601String().substring(0, 10));
+
+    final progressSnapshot = await progressRef.get();
+
+    if (progressSnapshot.exists) {
+      return DailyProgressData.fromJson(progressSnapshot.data()!);
+    }
+    return null;
+  }
+
+  Future<void> saveDailyProgress(DailyProgressData progress) async {
+    if (_currentUser == null) return;
+
+    final progressRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('daily_progress')
+        .doc(progress.date.toIso8601String().substring(0, 10));
+
+    await progressRef.set(progress.toJson());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +282,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             onPressed: () {
               setState(() {
-                _hasUnreadNotifications = false; // Reset when the bell is tapped
+                _hasUnreadNotifications =
+                    false; // Reset when the bell is tapped
               });
               Navigator.push(
                 context,
@@ -281,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.directions_run),
                 SummaryCard(
                     title: 'Workouts',
-                    value: _workoutsCompleted.toString(),
+                    value: '$_workoutsCompleted',
                     icon: Icons.fitness_center),
               ],
             ),
@@ -309,13 +425,13 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 16),
             DiscoverCard(
               imagePath: 'assets/images/what_3.png',
-              title: 'Gym Workouts',
-              description: 'Explore various gym workouts.',
+              title: 'Home Workouts',
+              description: 'Explore various home workouts.',
               icon: Icons.fitness_center,
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GymWorkoutScreen()),
+                  MaterialPageRoute(builder: (context) => HomeWorkoutScreen()),
                 );
               },
             ),
@@ -337,4 +453,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _activeIndex = index;
+    });
+  }
+
 }
