@@ -16,8 +16,13 @@ class ActivityDetailScreen extends StatelessWidget {
 
     // Convert the route to LatLng for Google Maps
     final List<LatLng> route = activity.route.map((point) {
-      // Access the latitude and longitude from the Map
-      return LatLng(point['latitude']!, point['longitude']!);
+      final lat = point['lat'] as double?;
+      final lng = point['lng'] as double?;
+      if (lat == null || lng == null) {
+        print('Warning: Null value found in route data');
+        return LatLng(0.0, 0.0); // Default value
+      }
+      return LatLng(lat, lng);
     }).toList();
 
     // Create a polyline to display the route
@@ -84,12 +89,14 @@ class ActivityDetailScreen extends StatelessWidget {
                           Marker(
                             markerId: MarkerId('start'),
                             position: route.first,
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
                             infoWindow: InfoWindow(title: 'Start'),
                           ),
                         if (route.isNotEmpty)
                           Marker(
                             markerId: MarkerId('end'),
                             position: route.last,
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
                             infoWindow: InfoWindow(title: 'End'),
                           ),
                       },

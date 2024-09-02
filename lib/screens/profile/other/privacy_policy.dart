@@ -30,7 +30,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 '5. **Your Rights:** You have the right to access, modify, or delete your personal '
                 'information at any time. You may contact us at support@fitnessapp.com to exercise your rights.\n\n'
                 'By using our app, you agree to this privacy policy. We may update this policy from '
-                'time to time, and we will notify you of any changes.'
+                'time to time, and we will notify you of any changes.', style: TextStyle(fontSize: 16)
               ),
             ],
           ),

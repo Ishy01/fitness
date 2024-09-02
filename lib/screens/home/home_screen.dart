@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:fitness/common/color_extension.dart';
+import 'package:fitness/main.dart';
 import 'package:fitness/models/daily_progress.dart';
 import 'package:fitness/screens/home/notification_screen.dart';
 import 'package:fitness/screens/home/recipe_scree.dart';
@@ -32,8 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _lastResetDay = -1;
   final _pageController = PageController();
   bool _hasUnreadNotifications = false;
+  // List<String> _recommendations = [];
 
-   @override
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -42,50 +44,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    MyApp.analytics.logEvent(
+      name: 'home_screen_viewed',
+      parameters: null,
+    );
     _initializeCurrentUser();
-    // _initializeStepCount();  // Fetch initial step count on start
+    //_initializeStepCount();
     _stepCountStream = Pedometer.stepCountStream;
     _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
     initNotifications();
+    //_fetchProgressData();
     _fetchAndSetProgressData();
+    //_fetchRecommendations();
   }
-
-  // Future<void> _initializeStepCount() async {
-  //   // Manually fetch the initial step count when the app starts
-  //   StepCount? initialStepCount;
-
-  //   try {
-  //     await for (var event in Pedometer.stepCountStream) {
-  //       initialStepCount = event;
-  //       break; // Break after fetching the first event
-  //     }
-
-  //     if (initialStepCount != null) {
-  //       DateTime now = DateTime.now();
-  //       int currentDay = now.day;
-
-  //       if (_lastResetDay != currentDay) {
-  //         _saveAndResetDailyProgress();
-  //         _initialSteps = initialStepCount.steps;
-  //         _lastResetDay = currentDay;
-  //       }
-
-  //       int dailySteps = initialStepCount.steps - _initialSteps;
-        
-  //       // Update the UI with the initial step count
-  //       setState(() {
-  //         _stepCountValue = dailySteps.toString();
-  //         _caloriesBurned = calculateCalories(dailySteps);
-  //         _distanceCovered = calculateDistance(dailySteps);
-  //       });
-
-  //       // Save initial progress
-  //       _updateDailyProgress(dailySteps, _caloriesBurned, _workoutsCompleted, _distanceCovered);
-  //     }
-  //   } catch (error) {
-  //     print('Error fetching initial step count: $error');
-  //   }
-  // }
 
   Future<void> _initializeCurrentUser() async {
     _currentUser = _auth.currentUser;
@@ -103,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _caloriesBurned = progress.calories;
         _workoutsCompleted = progress.workouts;
         _distanceCovered = progress.distance;
+        _initialSteps = progress.steps;
       });
     } else {
       // Set to default values if no data found for the current day
@@ -111,11 +83,17 @@ class _HomeScreenState extends State<HomeScreen> {
         _caloriesBurned = 0.0;
         _workoutsCompleted = 0;
         _distanceCovered = 0.0;
+        _initialSteps = 0;
       });
     }
   }
 
-  void _onStepCount(StepCount event) {
+  void _onStepCount(StepCount event) async {
+   // Initialize _initialSteps to 0 when the app is started
+  if (_initialSteps == 0) {
+    _initialSteps = event.steps;
+  }
+
     DateTime now = DateTime.now();
     int currentDay = now.day;
 
@@ -130,13 +108,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     int dailySteps = event.steps - _initialSteps;
 
+    if (dailySteps < 0) {
+      // Handle case where step count is reset
+      dailySteps = 0;
+    }
+
     setState(() {
       _stepCountValue = dailySteps.toString();
       _caloriesBurned = calculateCalories(dailySteps);
       _distanceCovered = calculateDistance(dailySteps);
     });
 
-    _updateDailyProgress(dailySteps, _caloriesBurned, _workoutsCompleted, _distanceCovered);
+    _updateDailyProgress(
+        dailySteps, _caloriesBurned, _workoutsCompleted, _distanceCovered);
   }
 
   void _onStepCountError(error) {
@@ -155,33 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return steps * 0.0008; // distance in kilometers
   }
 
-  // Future<void> _fetchProgressData() async {
-  //   if (_currentUser == null) return;
-
-  //   final progressRef = FirebaseFirestore.instance
-  //       .collection('users')
-  //       .doc(_currentUser!.uid)
-  //       .collection('daily_progress')
-  //       .doc(DateTime.now().toIso8601String().substring(0, 10));
-
-  //   final progressSnapshot = await progressRef.get();
-
-  //   if (progressSnapshot.exists) {
-  //     final data = progressSnapshot.data();
-  //     if (data != null) {
-  //       setState(() {
-  //         _stepCountValue = data['steps'].toString();
-  //         _caloriesBurned = data['calories'] ?? 0.0;
-  //         _workoutsCompleted = data['workouts'] ?? 0;
-  //         _distanceCovered = data['distance'] ?? 0.0;
-  //       });
-  //     }
-  //   }
-  // }
-
   void _saveAndResetDailyProgress() async {
-    await _updateDailyProgress(int.parse(_stepCountValue), _caloriesBurned, _workoutsCompleted, _distanceCovered);
-    
+    await _updateDailyProgress(int.parse(_stepCountValue), _caloriesBurned,
+        _workoutsCompleted, _distanceCovered);
+
     // Reset local data
     setState(() {
       _stepCountValue = '0';
@@ -191,7 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _updateDailyProgress(int steps, double calories, int workouts, double distance) async {
+  Future<void> _updateDailyProgress(
+      int steps, double calories, int workouts, double distance) async {
     if (_currentUser == null) return;
 
     final dailyProgressData = DailyProgressData(
@@ -370,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(height: 32),
             Text(
-              'Summary Stats',
+              'Todays Summary',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
             ),
             SizedBox(height: 16),
@@ -401,22 +363,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.fitness_center),
               ],
             ),
-            SizedBox(height: 32),
-            Text(
-              'Recommendations',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-            ),
-            SizedBox(height: 16),
-            RecommendationCard(
-                title: 'Morning Run',
-                description: 'A 30-minute run to start your day with energy.',
-                icon: Icons.directions_run),
-            SizedBox(height: 16),
-            RecommendationCard(
-                title: 'Strength Training',
-                description:
-                    'Focus on upper body strength with these exercises.',
-                icon: Icons.fitness_center),
+            //SizedBox(height: 32),
+            // Text(
+            //   'Recommendations',
+            //   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            // ),
+            // SizedBox(height: 16),
+            // if (_recommendations.isNotEmpty)
+            //   Column(
+            //     children: _recommendations.map((recommendation) {
+            //       return RecommendationCard(
+            //         title: 'Recommendation',
+            //         description: recommendation,
+            //         icon: Icons.thumb_up,
+            //       );
+            //     }).toList(),
+            //   )
+            // else
+            //   Text(
+            //     'No recommendations yet.',
+            //     style: TextStyle(fontSize: 18, color: Colors.grey),
+            //   ),
+
             SizedBox(height: 32),
             Text(
               'Discover',
@@ -459,5 +427,4 @@ class _HomeScreenState extends State<HomeScreen> {
       _activeIndex = index;
     });
   }
-
 }

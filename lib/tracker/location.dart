@@ -67,10 +67,10 @@ class LocationTracker extends ChangeNotifier {
 
   void stopTracking() {
     _positionSubscription?.cancel();
-    _previousPosition = null;
-    totalDistance = 0.0;
-    speed = 0.0;
-    routeCoords.clear();
+    //_previousPosition = null;
+    //totalDistance = 0.0;
+    //speed = 0.0;
+    //routeCoords.clear();
     notifyListeners();
   }
 

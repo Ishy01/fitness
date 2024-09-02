@@ -21,7 +21,7 @@ class ActivitiesScreen extends StatefulWidget {
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
-  String currentActivity = 'Running';
+  String currentActivity = 'Walking';
   bool isTracking = false;
   bool isPaused = false;
   TimerTracker? _timerTracker;
@@ -40,6 +40,16 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     _checkPermissions();
   }
 
+  // Future<void> _initializeUserWeight() async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user != null) {
+  //     final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+  //     setState(() {
+  //       userWeight = userData.data()?['weight'] ?? 70.0; // Default weight if not set
+  //     });
+  //   }
+  // }
+
   Future<void> _checkPermissions() async {
     var status = await Permission.activityRecognition.status;
     if (status.isDenied) {
@@ -52,10 +62,22 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     }
   }
 
+  Future<void> _initializeUserWeight() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    setState(() {
+      userWeight = userData.data()?['weight'] ?? 70.0; // Default weight if not set
+    });
+  }
+}
+
   void startActivity() {
+    //await _initializeUserWeight();
     _timerTracker?.startTracking();
     _locationTracker?.startTracking();
     _stepTracker?.startTracking();
+    //_caloriesTracker?.startTracking(userWeight);
     setState(() {
       isTracking = true;
       isPaused = false;
@@ -66,6 +88,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     _timerTracker?.stopTracking();
     _locationTracker?.stopTracking();
     _stepTracker?.stopTracking();
+    //_caloriesTracker?.stopTracking();
     setState(() {
       isTracking = false;
       isPaused = false;
@@ -77,6 +100,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     _timerTracker?.pauseTracking();
     _locationTracker?.pauseTracking();
     _stepTracker?.pauseTracking();
+    _caloriesTracker?.pauseTracking();
     setState(() {
       isPaused = true;
     });
@@ -86,6 +110,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     _timerTracker?.resumeTracking();
     _locationTracker?.resumeTracking();
     _stepTracker?.resumeTracking();
+    _caloriesTracker?.resumeTracking();
     setState(() {
       isPaused = false;
     });
@@ -108,6 +133,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
             TextButton(
               onPressed: () {
                 // Handle discard action
+                _resetTrackers();
                 Navigator.of(context).pop();
               },
               child: Text('Discard'),
@@ -165,8 +191,24 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           content: Text('Activity saved successfully!'),
         ),
       );
+      _resetTrackers();
     }
   }
+
+  void _resetTrackers() {
+    _timerTracker?.stopTracking();
+    _locationTracker?.stopTracking();
+    _locationTracker?.totalDistance = 0.0;
+    _locationTracker?.speed = 0.0;
+    _locationTracker?.routeCoords.clear();
+    _stepTracker?.stopTracking();
+    //_caloriesTracker?._totalCalories = 0.0; // If you track total calories
+
+    setState(() {
+        isTracking = false;
+        isPaused = false;
+    });
+}
 
   @override
   Widget build(BuildContext context) {

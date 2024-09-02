@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitness/common/color_extension.dart';
@@ -34,6 +35,11 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  //Analytics
+  static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  static FirebaseAnalyticsObserver observer =
+      FirebaseAnalyticsObserver(analytics: analytics);
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -63,6 +69,7 @@ class MyApp extends StatelessWidget {
               ),
               home: AuthChecker(),
               navigatorKey: navigatorKey,
+              navigatorObservers: [observer],
               routes: {
                 '/home': (context) => HomeScreen(),
                 '/profile': (context) => ProfileScreen(),

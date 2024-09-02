@@ -380,4 +380,15 @@ Future<List<WorkoutModel>> getUserWorkouts() async {
       return [];
     }
   }
+
+  Future<void> saveTokenToFirestore(String token) async {
+  if (token.isNotEmpty) {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .update({
+      'tokens': FieldValue.arrayUnion([token]),
+    });
+  }
+}
 }
