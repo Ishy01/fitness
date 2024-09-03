@@ -11,7 +11,6 @@ import 'package:fitness/screens/workout/home_workout_screen.dart';
 import 'package:flutter/material.dart';
 import 'progress_chart.dart';
 import 'summary_card.dart';
-import 'recommendation_card.dart';
 import 'package:pedometer/pedometer.dart';
 import '../../common_widgets/discover_card.dart';
 
@@ -33,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _lastResetDay = -1;
   final _pageController = PageController();
   bool _hasUnreadNotifications = false;
-  // List<String> _recommendations = [];
 
   @override
   void dispose() {
@@ -52,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
     //_initializeStepCount();
     _stepCountStream = Pedometer.stepCountStream;
     _stepCountStream?.listen(_onStepCount).onError(_onStepCountError);
-    initNotifications();
     //_fetchProgressData();
     _fetchAndSetProgressData();
+    _fetchUnreadNotificationStatus();
     //_fetchRecommendations();
   }
 
@@ -167,18 +165,35 @@ class _HomeScreenState extends State<HomeScreen> {
     await saveDailyProgress(dailyProgressData);
   }
 
-  Future<void> initNotifications() async {
-    final _firebaseMessaging = FirebaseMessaging.instance;
+  Future<void> _fetchUnreadNotificationStatus() async {
+    if (_currentUser != null) {
+      final unreadNotifications = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('recommendations')
+          .where('read', isEqualTo: false)
+          .get();
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      setState(() {
-        _hasUnreadNotifications = true;
-      });
-      print("Notification received: ${message.notification?.title}");
-    });
-
-    await _firebaseMessaging.requestPermission();
+      if (unreadNotifications.docs.isNotEmpty) {
+        setState(() {
+          _hasUnreadNotifications = true;
+        });
+      }
+    }
   }
+
+  // Future<void> initNotifications() async {
+  //   final _firebaseMessaging = FirebaseMessaging.instance;
+
+  //   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  //     setState(() {
+  //       _hasUnreadNotifications = true;
+  //     });
+  //     print("Notification received: ${message.notification?.title}");
+  //   });
+
+  //   await _firebaseMessaging.requestPermission();
+  // }
 
   Future<DailyProgressData?> getDailyProgress(DateTime date) async {
     if (_currentUser == null) return null;
@@ -252,7 +267,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                   builder: (context) => NotificationScreen(),
                 ),
-              );
+              ).then((_) {
+                _fetchUnreadNotificationStatus();
+              });
             },
           ),
         ],

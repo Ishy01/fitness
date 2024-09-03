@@ -33,7 +33,6 @@ class Notifications {
     await _firebaseMessaging.requestPermission();
     final fCMToken = await _firebaseMessaging.getToken();
     print('Token: $fCMToken');
-    //await saveTokenToFirestore(fCMToken ?? '');
     initPushNotifications();
     initLocalNotifications();
   }
